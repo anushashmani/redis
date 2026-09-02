@@ -55,7 +55,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🧪 Automated Integration Tests (10/10 PASS)
+## 🧪 Automated Integration Tests (10/10 PASS)  
 
 Run the full automated end-to-end integration test suite:
 ```bash
