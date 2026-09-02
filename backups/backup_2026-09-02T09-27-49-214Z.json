@@ -1,0 +1,76 @@
+{
+  "version": "1.0",
+  "createdAt": "2026-09-02T09:27:49.240Z",
+  "retentionPolicy": "24h_rolling_purge",
+  "database": {
+    "type": "PostgreSQL_Supabase",
+    "tables": {
+      "products": [
+        {
+          "id": "1",
+          "name": "Mechanical Keyboard",
+          "price": 149.99,
+          "category": "Peripherals",
+          "inStock": true
+        },
+        {
+          "id": "2",
+          "name": "Wireless Gaming Mouse",
+          "price": 79.99,
+          "category": "Peripherals",
+          "inStock": true
+        },
+        {
+          "id": "3",
+          "name": "4K Gaming Monitor 27″",
+          "price": 649.99,
+          "category": "Displays",
+          "inStock": true
+        },
+        {
+          "id": "4",
+          "name": "Noise-Cancelling Headphones",
+          "price": 299.99,
+          "category": "Audio",
+          "inStock": true
+        },
+        {
+          "id": "5",
+          "name": "USB-C Multiport Hub",
+          "price": 49.99,
+          "category": "Accessories",
+          "inStock": true
+        },
+        {
+          "id": "6",
+          "name": "Ergonomic Desk Mat (XL)",
+          "price": 29.99,
+          "category": "Accessories",
+          "inStock": true
+        },
+        {
+          "id": "7",
+          "name": "Studio Condenser Mic",
+          "price": 189.99,
+          "category": "Audio",
+          "inStock": true
+        },
+        {
+          "id": "8",
+          "name": "Ultrawide Monitor 34″",
+          "price": 499.99,
+          "category": "Displays",
+          "inStock": true
+        }
+      ]
+    }
+  },
+  "redis": {
+    "engine": "Upstash_Serverless_Redis",
+    "activeQueues": [
+      "queue:jobs:pending",
+      "queue:jobs:completed"
+    ],
+    "cacheStatus": "HEALTHY"
+  }
+}

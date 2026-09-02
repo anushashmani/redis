@@ -1,0 +1,44 @@
+name: 🗄️ Automated 24-Hour Database Backup & Rolling Cleanup
+
+on:
+  # ⏰ Schedule: Runs automatically every 24 hours at 00:00 UTC (Midnight)
+  schedule:
+    - cron: '0 0 * * *'
+
+  # 🔘 Manual Trigger: Allows manual backup anytime from GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  database-backup:
+    name: 📦 Run Automated Backup & Purge Old Backups
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: 🗄️ Execute Backup & 24h Rolling Cleaner Script
+        env:
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/backup-database.mjs
+
+      - name: ☁️ Upload Backup as Artifact (Auto-Expiring after 1 Day)
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup-latest
+          path: backups/
+          # 🧹 ROLLING RETENTION: GitHub will automatically delete this backup after 1 day!
+          retention-days: 1
+          if-no-files-found: error
