@@ -62,7 +62,7 @@ Run the full automated end-to-end integration test suite:
 node test-redis-caching.mjs
 ```
   
----
+---   
 
 ## 📂 Project Structure
 

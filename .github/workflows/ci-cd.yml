@@ -2,9 +2,8 @@ name: Upstash Redis & Next.js CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ main ] # Only runs on main branch push / merge
+
 
 jobs:
   quality-check:
