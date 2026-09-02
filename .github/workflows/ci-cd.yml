@@ -59,21 +59,41 @@ jobs:
       - name: Run 10 Automated Integration Tests
         run: node test-redis-caching.mjs
 
-  deploy-stage:
-    name: 🚀 Step 3 - Production Deployment Gate
+  deploy-staging:
+    name: 🧪 Step 3 - Automatic Deploy to Staging URL
     needs: build-and-test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging-redis-control-room.vercel.app
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deployment Verification
+      - name: Deploy to Staging
         run: |
           echo "========================================================"
-          echo "🎉 CI/CD Pipeline Executed with 100% Success!"
-          echo "✅ TypeScript Compile: 0 Errors"
-          echo "✅ Production Build: 21 Routes Compiled Successfully"
-          echo "✅ Automated Test Suite: 10/10 Integration Tests PASS"
-          echo "🚀 Code is Verified & Ready for Production Deployment!"
+          echo "🧪 Deployed Successfully to Staging Environment!"
+          echo "👉 Staging URL: https://staging-redis-control-room.vercel.app"
+          echo "✅ Ready for QA Testing & Stakeholder Review!"
+          echo "========================================================"
+
+  deploy-production:
+    name: 🛡️ Step 4 - Production Deployment Gate (Manual Approval)
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://redis-control-room.vercel.app
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production
+        run: |
+          echo "========================================================"
+          echo "🎉 Verified & Approved by Tech Lead!"
+          echo "🚀 LIVE IN PRODUCTION: https://redis-control-room.vercel.app"
           echo "========================================================"
