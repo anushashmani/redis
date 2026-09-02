@@ -1,0 +1,44 @@
+name: 🚀 Auto Create Pull Request on Feature Push
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'feat/**'
+      - 'fix/**'
+
+jobs:
+  auto-create-pr:
+    name: 📝 Auto-Create Pull Request
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create Pull Request Automatically
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if a PR already exists for this branch
+          PR_EXISTS=$(gh pr list --head "${{ github.ref_name }}" --json number --jq '.[0].number')
+
+          if [ -z "$PR_EXISTS" ]; then
+            echo "Creating Pull Request for branch ${{ github.ref_name }}..."
+            gh pr create \
+              --title "🚀 Auto PR: ${{ github.event.head_commit.message || github.ref_name }}" \
+              --body "### 🤖 Automated Pull Request
+          This Pull Request was **automatically created** by GitHub Actions upon pushing to \`${{ github.ref_name }}\`.
+
+          - **Author:** @${{ github.actor }}
+          - **Commit:** ${{ github.sha }}
+
+          ⚡ *Auto-Review & Auto-Merge bot will now test and merge this PR automatically.*" \
+              --base main \
+              --head "${{ github.ref_name }}"
+          else
+            echo "Pull Request #$PR_EXISTS already exists for this branch."
+          fi
