@@ -9,9 +9,11 @@ export async function POST() {
   try {
     const result = await processNextJob();
 
-    return NextResponse.json(result, {
-      status: result.processed ? 200 : 204, // 204 No Content if queue was empty
-    });
+    if (!result.processed) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error("🔥 Worker processing failed:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

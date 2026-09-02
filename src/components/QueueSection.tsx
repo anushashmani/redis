@@ -69,8 +69,11 @@ export default function QueueSection() {
       if (res.status === 204) return { processed: false, message: "Queue is empty." };
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["queue-jobs"] });
+      if (data && data.processed === false) {
+        setIsAutoWorkerRunning(false);
+      }
     },
   });
 
@@ -102,11 +105,20 @@ export default function QueueSection() {
     }
   };
 
-  // Auto Worker Loop
+  // Auto Worker Loop — Automatically stops when queue becomes empty
   useEffect(() => {
     if (isAutoWorkerRunning) {
       autoWorkerRef.current = setInterval(async () => {
-        await workerMutation.mutateAsync();
+        try {
+          const res = await workerMutation.mutateAsync();
+          if (res && res.processed === false) {
+            setIsAutoWorkerRunning(false);
+            if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
+          }
+        } catch {
+          setIsAutoWorkerRunning(false);
+          if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
+        }
       }, 1000);
     } else {
       if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
@@ -115,6 +127,7 @@ export default function QueueSection() {
       if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
     };
   }, [isAutoWorkerRunning]);
+
 
   const jobs = queueData?.jobs || [];
   const pendingJobs = jobs.filter((j: any) => j.status === "pending");
