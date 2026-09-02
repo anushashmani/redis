@@ -12,6 +12,7 @@ export default function PresenceSection() {
 
   // ---------------------------------------------------------
   // React Query: Real-Time Presence Polling (GET /api/presence)
+  // Only polls when user has activated live heartbeat!
   // ---------------------------------------------------------
   const { data: presenceData } = useQuery({
     queryKey: ["presence"],
@@ -19,8 +20,9 @@ export default function PresenceSection() {
       const res = await fetch("/api/presence");
       return res.json();
     },
-    refetchInterval: 3000, // Poll every 3 seconds
+    refetchInterval: isHeartbeatOn ? 4000 : false,
   });
+
 
   // ---------------------------------------------------------
   // React Query: Send Heartbeat Ping (POST /api/presence/heartbeat)

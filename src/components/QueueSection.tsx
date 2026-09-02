@@ -22,10 +22,11 @@ export default function QueueSection() {
   const queryClient = useQueryClient();
   const [selectedType, setSelectedType] = useState<JobType>("GENERATE_PDF_INVOICE");
   const [isAutoWorkerRunning, setIsAutoWorkerRunning] = useState(false);
-  const autoWorkerRef = useRef<any>(null);
 
   // ---------------------------------------------------------
   // React Query: Fetch Queue Snapshot (GET /api/queue/jobs)
+  // Smart Adaptive Polling: Only polls when auto-worker is active
+  // or when jobs are in queue. When idle, polling drops to 0!
   // ---------------------------------------------------------
   const { data: queueData, isFetching } = useQuery({
     queryKey: ["queue-jobs"],
@@ -33,7 +34,14 @@ export default function QueueSection() {
       const res = await fetch("/api/queue/jobs");
       return res.json();
     },
-    refetchInterval: 1500, // 1.5s live polling
+    // Only poll if worker is actively running or tasks are pending
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (isAutoWorkerRunning || (data?.pendingCount || 0) > 0 || (data?.processingCount || 0) > 0) {
+        return 2000;
+      }
+      return false; // Stop polling completely when idle!
+    },
   });
 
   // ---------------------------------------------------------
@@ -105,28 +113,37 @@ export default function QueueSection() {
     }
   };
 
-  // Auto Worker Loop — Automatically stops when queue becomes empty
+  // Sequential Auto Worker Loop:
+  // Runs 1 job at a time sequentially. Stops immediately when queue is empty.
   useEffect(() => {
-    if (isAutoWorkerRunning) {
-      autoWorkerRef.current = setInterval(async () => {
+    let isActive = true;
+
+    async function runWorkerLoop() {
+      while (isActive && isAutoWorkerRunning) {
         try {
           const res = await workerMutation.mutateAsync();
-          if (res && res.processed === false) {
+          if (!isActive || !res || res.processed === false) {
             setIsAutoWorkerRunning(false);
-            if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
+            break;
           }
+          // Brief 600ms pacing between jobs
+          await new Promise((r) => setTimeout(r, 600));
         } catch {
           setIsAutoWorkerRunning(false);
-          if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
+          break;
         }
-      }, 1000);
-    } else {
-      if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
+      }
     }
+
+    if (isAutoWorkerRunning) {
+      runWorkerLoop();
+    }
+
     return () => {
-      if (autoWorkerRef.current) clearInterval(autoWorkerRef.current);
+      isActive = false;
     };
   }, [isAutoWorkerRunning]);
+
 
 
   const jobs = queueData?.jobs || [];

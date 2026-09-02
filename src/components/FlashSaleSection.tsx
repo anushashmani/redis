@@ -19,8 +19,8 @@ export default function FlashSaleSection() {
       const res = await fetch(`/api/flash-sale/inventory/${itemId}`);
       return res.json();
     },
-    refetchInterval: 3000, // auto poll every 3s
   });
+
 
   // ---------------------------------------------------------
   // React Query: Reset Inventory (POST /api/flash-sale/reset)
