@@ -1,11 +1,9 @@
-name: 🚀 Auto Create Pull Request on Feature Push
+name: 🚀 Auto Create Pull Request on Any Branch Push
 
 on:
   push:
-    branches:
-      - 'feature/**'
-      - 'feat/**'
-      - 'fix/**'
+    branches-ignore:
+      - main # Runs on ANY branch pushed except main
 
 jobs:
   auto-create-pr:
@@ -14,31 +12,37 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repository with Full History
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Create Pull Request Automatically
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "Processing branch: $BRANCH_NAME"
+
           # Check if a PR already exists for this branch
-          PR_EXISTS=$(gh pr list --head "${{ github.ref_name }}" --json number --jq '.[0].number')
+          PR_EXISTS=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number')
 
           if [ -z "$PR_EXISTS" ]; then
-            echo "Creating Pull Request for branch ${{ github.ref_name }}..."
+            echo "🚀 Creating Pull Request for branch $BRANCH_NAME -> main..."
             gh pr create \
               --title "🚀 Auto PR: ${{ github.event.head_commit.message || github.ref_name }}" \
               --body "### 🤖 Automated Pull Request
-          This Pull Request was **automatically created** by GitHub Actions upon pushing to \`${{ github.ref_name }}\`.
+          This Pull Request was **automatically generated** by GitHub Actions upon pushing to branch \`$BRANCH_NAME\`.
 
           - **Author:** @${{ github.actor }}
           - **Commit:** ${{ github.sha }}
 
-          ⚡ *Auto-Review & Auto-Merge bot will now test and merge this PR automatically.*" \
+          ⚡ *Auto-Review & Auto-Merge will now test, review, and merge this PR automatically.*" \
               --base main \
-              --head "${{ github.ref_name }}"
+              --head "$BRANCH_NAME"
           else
-            echo "Pull Request #$PR_EXISTS already exists for this branch."
+            echo "✅ Pull Request #$PR_EXISTS already exists for branch $BRANCH_NAME."
           fi
