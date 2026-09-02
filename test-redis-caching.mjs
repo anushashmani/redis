@@ -907,6 +907,104 @@ async function testRedisSearchIndex() {
 }
 
 // =============================================================
+// TEST 10: Asynchronous Job Queue & Background Task Worker
+// =============================================================
+// WHAT WE'RE TESTING:
+//   1. Clear Queue: POST /api/queue/reset purges old queue states.
+//   2. Producer: POST /api/queue/enqueue pushes jobs to Redis List
+//      ("queue:jobs:pending") and returns 202 Accepted in <2ms.
+//   3. Queue Inspection: GET /api/queue/jobs confirms pending count.
+//   4. Consumer / Worker: POST /api/queue/process pops job via RPOP,
+//      executes task, and updates state in Redis to 'completed'.
+// =============================================================
+
+async function testJobQueueFlow() {
+  header("TEST 10: Asynchronous Job Queue & Background Worker");
+
+  // Step 1: Clear old queue state
+  console.log("  🧹 Step 1: Resetting queue state (/api/queue/reset)…");
+  await fetch(`${BASE_URL}/api/queue/reset`, { method: "POST" });
+
+  // Step 2: Enqueue 2 background tasks
+  console.log("  📦 Step 2: Enqueuing 2 background tasks (PDF Invoice & Video Transcoding)…");
+  const enqueue1 = await fetch(`${BASE_URL}/api/queue/enqueue`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "GENERATE_PDF_INVOICE",
+      payload: { orderId: 8812 },
+    }),
+  });
+  const data1 = await enqueue1.json();
+  console.log(`    Enqueued: ${data1.job?.id} (Type: ${data1.job?.type}) [Status: ${enqueue1.status}]`);
+
+  const enqueue2 = await fetch(`${BASE_URL}/api/queue/enqueue`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "TRANSCODE_VIDEO_4K",
+      payload: { videoTitle: "Trailer.mp4" },
+    }),
+  });
+  const data2 = await enqueue2.json();
+  console.log(`    Enqueued: ${data2.job?.id} (Type: ${data2.job?.type}) [Status: ${enqueue2.status}]\n`);
+
+  assert(
+    enqueue1.status === 202 && enqueue2.status === 202,
+    `Producer enqueued 2 jobs into Redis List with HTTP 202 Accepted!`,
+    `Enqueue failed.`
+  );
+
+  // Step 3: Check snapshot (should have 2 pending)
+  console.log("  🔍 Step 3: Inspecting queue snapshot (/api/queue/jobs)…");
+  const snapRes1 = await fetch(`${BASE_URL}/api/queue/jobs`);
+  const snap1 = await snapRes1.json();
+  console.log(`    Pending Tasks in Queue: ${snap1.pendingCount} (Expected: 2)\n`);
+
+  assert(
+    snap1.pendingCount === 2,
+    `Queue snapshot confirmed 2 pending jobs waiting in Redis List.`,
+    `Expected 2 pending jobs but found ${snap1.pendingCount}.`
+  );
+
+  // Step 4: Worker processes Job 1
+  console.log("  ⚙️  Step 4: Running Worker Consumer on Job 1 (/api/queue/process)…");
+  const workRes1 = await fetch(`${BASE_URL}/api/queue/process`, { method: "POST" });
+  const workData1 = await workRes1.json();
+  console.log(`    Worker Result: ${workData1.message}`);
+  console.log(`    Job Details  : ${workData1.job?.result} (Took: ${workData1.job?.durationMs}ms)\n`);
+
+  assert(
+    workData1.processed === true && workData1.job?.status === "completed",
+    `Worker successfully popped job from Redis and executed background task!`,
+    `Worker processing failed.`
+  );
+
+  // Step 5: Check snapshot after Job 1
+  const snapRes2 = await fetch(`${BASE_URL}/api/queue/jobs`);
+  const snap2 = await snapRes2.json();
+  console.log(`    Updated Status: ${snap2.pendingCount} Pending | ${snap2.completedCount} Completed\n`);
+
+  assert(
+    snap2.pendingCount === 1 && snap2.completedCount === 1,
+    `Redis Queue state transitions verified (1 Pending, 1 Completed).`,
+    `Queue state transition failed.`
+  );
+
+  // Step 6: Worker processes Job 2
+  console.log("  ⚙️  Step 6: Running Worker Consumer on Job 2…");
+  const workRes2 = await fetch(`${BASE_URL}/api/queue/process`, { method: "POST" });
+  const workData2 = await workRes2.json();
+  console.log(`    Worker Result: ${workData2.message}\n`);
+
+  assert(
+    workData2.processed === true && workData2.job?.status === "completed",
+    `All background jobs in Redis queue completed successfully!`,
+    `Job 2 processing failed.`
+  );
+}
+
+// =============================================================
 // TEST RUNNER
 // =============================================================
 
@@ -939,6 +1037,7 @@ async function runAllTests() {
     await testDistributedLockAndFlashSale();
     await testWriteThroughAndPreWarming();
     await testRedisSearchIndex();
+    await testJobQueueFlow();
   } catch (error) {
     console.error("\n💀 Unexpected error during tests:", error);
   }
@@ -950,6 +1049,7 @@ async function runAllTests() {
 }
 
 runAllTests();
+
 
 
 

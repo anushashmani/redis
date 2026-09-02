@@ -8,11 +8,12 @@ import FlashSaleSection from "@/components/FlashSaleSection";
 import PresenceSection from "@/components/PresenceSection";
 import RateLimitSection from "@/components/RateLimitSection";
 import SessionSection from "@/components/SessionSection";
-import { Zap, Search, ShieldCheck, Radio, ShieldAlert, KeyRound } from "lucide-react";
+import QueueSection from "@/components/QueueSection";
+import { Zap, Search, ShieldCheck, Radio, ShieldAlert, KeyRound, Layers } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<
-    "benchmark" | "search" | "flashsale" | "presence" | "ratelimit" | "session"
+    "benchmark" | "search" | "flashsale" | "presence" | "ratelimit" | "session" | "queue"
   >("benchmark");
 
   const [requestCount, setRequestCount] = useState(0);
@@ -26,6 +27,7 @@ export default function Home() {
   const tabs = [
     { id: "benchmark", label: "Cache vs Live DB", icon: Zap, color: "var(--neon-cyan)" },
     { id: "search", label: "Google/Amazon Search", icon: Search, color: "var(--neon-blue)" },
+    { id: "queue", label: "📦 Async Job Queue", icon: Layers, color: "var(--neon-amber)" },
     { id: "flashsale", label: "Flash Sale & Locks", icon: ShieldCheck, color: "var(--neon-violet)" },
     { id: "presence", label: "Live Presence", icon: Radio, color: "var(--neon-emerald)" },
     { id: "ratelimit", label: "Rate Limiting", icon: ShieldAlert, color: "var(--neon-rose)" },
@@ -75,6 +77,7 @@ export default function Home() {
       <div>
         {activeTab === "benchmark" && <BenchmarkSection onMetricsUpdate={handleMetricsUpdate} />}
         {activeTab === "search" && <SearchSection />}
+        {activeTab === "queue" && <QueueSection />}
         {activeTab === "flashsale" && <FlashSaleSection />}
         {activeTab === "presence" && <PresenceSection />}
         {activeTab === "ratelimit" && <RateLimitSection />}
@@ -83,3 +86,4 @@ export default function Home() {
     </main>
   );
 }
+
