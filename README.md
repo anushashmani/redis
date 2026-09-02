@@ -1,120 +1,106 @@
-# Upstash Redis + Next.js 14+ Enterprise Architecture
+# 🚀 Upstash Redis + Next.js Enterprise Control Room
 
-A comprehensive, production-ready reference implementation demonstrating modern Redis caching strategies, distributed concurrency patterns, real-time presence tracking, and in-memory search indexing in a Next.js 14+ (App Router) serverless architecture.
+A production-ready reference architecture showcasing **10 advanced Redis enterprise design patterns**, **Live Supabase PostgreSQL database integration**, and a **TanStack React Query Cyber-Enterprise UI Dashboard**.
 
 ---
 
-## ⚡ Architectural Features & Implemented Flows
+## ⚡ 10 Enterprise Redis Features Implemented
 
-| Flow | Pattern | Redis Commands | Key Benefit |
+| # | Feature | Redis Data Structures & Patterns | Real-World Company Use Case |
 |---|---|---|---|
-| **1. Product Lookup** | Cache-Aside with Graceful DB Fallback | `GET`, `SET EX 3600` | Reduces database load; falls back to DB if Redis is offline |
-| **2. Product Updates** | Write-Through Cache Synchronization | `SET EX` (on PUT) | 0ms stale data; updates cache synchronously on DB mutation |
-| **3. Cold-Start Elimination** | Eager Cache Pre-Warming | `pipeline.set(..., EX)` | 0ms latency even on the very first user request after deployment |
-| **4. Live Autocomplete** | Google/Amazon Hybrid Typeahead | `idx:doc:*`, Pipeline | Instant suggestions as-you-type with weighted relevance |
-| **5. Full-Text Search** | Inverted Index Multi-Token Search | `SINTER`, `SUNION`, `ZSET` | Multi-token set intersection in RAM in <1ms without hitting SQL DB |
-| **6. Flash-Sale Concurrency** | Distributed Mutex Lock & Stock Safety | `SET NX EX`, Lua `EVAL` | Prevents overselling and race conditions under extreme traffic |
-| **7. Live User Presence** | Real-Time Heartbeat & Viewer Counter | `ZADD`, `ZRANGE`, `ZREMRANGEBYSCORE` | Tracks active users and isolated page viewers with auto-pruning |
-| **8. API Protection** | Sliding-Window Rate Limiting | `@upstash/ratelimit` | Prevents brute-force, DDoS, and runaway third-party API bills |
-| **9. Serverless Auth** | Stateless Session Store | `SET EX 1800`, `GET`, `TTL` | Fast microsecond session validation via Bearer token |
+| **1** | **Cache-Aside Pattern** | String `SET product:{id} <JSON> EX 60`, `GET` | High-traffic e-commerce product catalogs |
+| **2** | **TTL & Auto Eviction** | `EXPIRE`, `TTL` | Temporary tokens, short-lived price feeds |
+| **3** | **Sliding Window Rate Limiter** | `@upstash/ratelimit` (Sliding Window Algorithm) | OTP endpoints, DDoS/Brute-force protection |
+| **4** | **Smart Cache Invalidation** | `DEL product:{id}`, `SCAN` | Catalog updates, inventory changes |
+| **5** | **Search Query Cache & Trends** | String Caching + Sorted Sets `ZINCRBY trending:searches` | Popular search analytics (e.g. Amazon search bar) |
+| **6** | **Live User Presence & Heartbeats** | Sorted Sets `ZADD presence:global <epoch> <userId>` + `ZREMRANGEBYSCORE` | Figma / Google Docs live active users |
+| **7** | **Distributed Mutex Lock** | Atomic `SET resource:lock <uuid> NX EX 5` + Lua Script Unlock | Flash sales (PS5/Ticketmaster) without overselling |
+| **8** | **Write-Through Mutation & Pre-Warm** | Synchronous DB + Redis Write + Pipeline `MSET` | Zero cold-start latency for top catalog items |
+| **9** | **Inverted Search Index & 5-Tier Autocomplete** | Inverted Sets `idx:token:{w}`, `SINTER`, `SUNION`, Range Sets | Google/Amazon Weighted Hybrid Typeahead Search |
+| **10** | **Asynchronous Job Queue & Worker** | Redis Lists `LPUSH` / `RPOP` + Job State JSON + Dead Letter Queue | Netflix video transcoding, PDF invoice generators |
 
 ---
 
-## 📁 Project Directory Structure
+## 🛠️ Tech Stack & Architecture
 
-```
-src/
-├── lib/
-│   ├── redis.ts                 ← Shared Upstash Redis REST client instance
-│   ├── search-index.ts          ← Native Redis Inverted Search Index Engine & Autocomplete
-│   ├── lock.ts                  ← Distributed Mutex Lock with atomic Lua script releases
-│   ├── inventory.ts             ← Flash-sale inventory manager & concurrency checkout engine
-│   ├── db.ts                    ← Mock database layer (500ms latency, search filters, mutations)
-│   └── ratelimit.ts             ← Reusable sliding-window rate limiter (@upstash/ratelimit)
-└── app/
-    └── api/
-        ├── search-index/
-        │   ├── route.ts         ← Full-text multi-token search in Redis (GET)
-        │   ├── autocomplete/route.ts ← Instant typeahead suggestions (GET)
-        │   └── reindex/route.ts ← Rebuild Redis inverted index (POST)
-        ├── products/
-        │   └── [id]/route.ts    ← Cache-Aside (GET), Write-Through (PUT), Purge (DELETE)
-        ├── cache/
-        │   ├── warmup/route.ts   ← Eager Cache Pre-Warming pipeline (POST)
-        │   └── [key]/route.ts    ← Direct inspection (GET), override (POST), invalidation (DELETE)
-        ├── search/
-        │   └── route.ts         ← Normalized query caching & Trending terms via ZSET (GET)
-        ├── flash-sale/
-        │   ├── checkout/route.ts ← Concurrency-protected checkout with lock (POST)
-        │   ├── inventory/[itemId]/route.ts ← Real-time stock & order tracker (GET)
-        │   └── reset/route.ts    ← Stock reset endpoint for stress tests (POST)
-        ├── presence/
-        │   ├── heartbeat/route.ts ← Keepalive pings & disconnects (POST/DELETE)
-        │   ├── route.ts          ← Global & resource-specific online counts (GET)
-        │   └── [userId]/route.ts ← Single user online status & last seen (GET)
-        ├── otp/
-        │   └── route.ts         ← Sliding-window rate-limited OTP sender (POST)
-        ├── login/
-        │   └── route.ts         ← Stateless session generation with 30-min TTL (POST)
-        └── me/
-            └── route.ts         ← Bearer token session validation (GET)
-
-test-redis-caching.mjs            ← Automated integration test suite (9 test scenarios)
-.env.local.example               ← Template for required Upstash environment variables
-```
+- **Framework:** Next.js 16 (App Router + Turbopack)
+- **Frontend State Management:** `@tanstack/react-query` (TanStack Query v5)
+- **Icons & Styling:** `lucide-react` + Vanilla CSS Cyber-Enterprise Dark Mode Design System
+- **Redis Provider:** Upstash Serverless Redis (`@upstash/redis` + `@upstash/ratelimit`)
+- **Primary Database:** Supabase PostgreSQL (`@supabase/supabase-js`) with automatic mock fallback
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Clone & Install Dependencies
+### 1. Install Dependencies
 ```bash
-git clone https://github.com/anushashmani/redis.git
-cd redis
 npm install
 ```
 
 ### 2. Configure Environment Variables
-Create a free Redis database at [Upstash Console](https://console.upstash.com).
-
-Copy `.env.local.example` to `.env.local`:
-```bash
-cp .env.local.example .env.local
-```
-
-Add your credentials in `.env.local`:
+Create `.env.local` based on `.env.local.example`:
 ```env
-UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your-rest-token-here
+UPSTASH_REDIS_REST_URL="https://your-upstash-redis-url.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your_upstash_redis_token"
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key"
 ```
 
-### 3. Run the Development Server
+### 3. Run Development Server
 ```bash
 npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🧪 Automated Integration Test Suite
+## 🧪 Automated Integration Tests (10/10 PASS)
 
-A standalone, zero-dependency Node.js test script verifies all 9 Redis flows:
-
+Run the full automated end-to-end integration test suite:
 ```bash
 node test-redis-caching.mjs
 ```
 
-### Tests Covered:
-- ✅ **Test 1:** Cache HIT / MISS Latency Flow (>2x speedup)
-- ✅ **Test 2:** Dynamic TTL & Key Auto-Expiry (5s TTL)
-- ✅ **Test 3:** Sliding Window Rate Limiter (5 req / 60s -> HTTP 429)
-- ✅ **Test 4:** Cache Invalidation & Purge Flow
-- ✅ **Test 5:** Query Normalization & Trending Searches via `ZSET`
-- ✅ **Test 6:** Live User Presence, Viewers Count & Heartbeat Monitoring
-- ✅ **Test 7:** Distributed Mutex Lock & Flash Sale Concurrency Protection
-- ✅ **Test 8:** Cache Pre-Warming & Write-Through Mutation Synchronization
-- ✅ **Test 9:** Native Redis Inverted Search Index & Typeahead Autocomplete
+---
+
+## 📂 Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── cache/                  # Cache warmup & key invalidation
+│   │   ├── flash-sale/             # Distributed lock checkout & inventory
+│   │   ├── presence/               # Live presence & heartbeat pings
+│   │   ├── products/               # Cache-Aside & Write-Through endpoints
+│   │   ├── queue/                  # Asynchronous Job Queue Producer & Worker
+│   │   ├── search-index/           # Inverted Index Search & 5-Tier Typeahead
+│   │   ├── supabase/               # Supabase database seeder
+│   │   ├── login/ /me/ /otp/       # Stateless auth sessions & rate limiting
+│   ├── globals.css                 # Cyber-Enterprise Dark Theme
+│   ├── layout.tsx                  # Root layout with QueryProvider
+│   └── page.tsx                    # Multi-tab interactive test control room
+├── components/                     # Modular React Query components
+│   ├── BenchmarkSection.tsx
+│   ├── FlashSaleSection.tsx
+│   ├── Header.tsx
+│   ├── PresenceSection.tsx
+│   ├── QueueSection.tsx
+│   ├── RateLimitSection.tsx
+│   ├── SearchSection.tsx
+│   └── SessionSection.tsx
+├── lib/
+│   ├── db.ts                       # Supabase query abstraction & mock catalog
+│   ├── queue.ts                    # Redis Job Queue Engine & Worker state machine
+│   ├── redis.ts                    # Upstash Redis client singleton
+│   ├── search-index.ts             # Inverted Index & 5-Tier Relevance Algorithm
+│   └── supabase.ts                 # Supabase client singleton
+└── providers/
+    └── QueryProvider.tsx           # TanStack QueryClient Provider wrapper
+```
 
 ---
 
-## 📜 License
-MIT License.
+## 🔗 Repository
+GitHub: [https://github.com/anushashmani/redis.git](https://github.com/anushashmani/redis.git)
