@@ -51,10 +51,10 @@ SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key"
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your      browser.
 
 ---
-
+read
 ## 🧪 Automated Integration Tests (10/10 PASS)
 
 Run the full automated end-to-end integration test suite:
